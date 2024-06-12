@@ -1,8 +1,8 @@
 use std::collections::HashMap;
-use alfred_rs::connection::{Publisher, Subscriber};
+use alfred_rs::connection::{Receiver, Sender};
 use alfred_rs::error::Error;
 use alfred_rs::message::MessageType;
-use alfred_rs::module::Module;
+use alfred_rs::service_module::ServiceModule;
 use openai_api_rs::v1::api::Client;
 use openai_api_rs::v1::chat_completion;
 use openai_api_rs::v1::chat_completion::{ChatCompletionMessage, ChatCompletionRequest};
@@ -13,22 +13,22 @@ const GPT_MODEL: &str = openai_api_rs::v1::common::GPT3_5_TURBO;
 #[tokio::main]
 async fn main() -> Result<(), Error> {
     env_logger::init();
-    let mut module = Module::new(MODULE_NAME.to_string()).await?;
+    let mut module = ServiceModule::new(MODULE_NAME.to_string()).await?;
     let openai_token = module.config.get_module_value("openai_token".to_string())
         .expect("OPENAI_TOKEN needed");
     let system_msg = module.config.get_module_value("system_msg".to_string())
         .unwrap_or("".to_string());
-    module.subscribe("openai".to_string()).await.expect("Error during subscription to echo");
+    module.listen("openai".to_string()).await.expect("Error during subscription to echo");
     let mut users_history: HashMap<String, Vec<ChatCompletionMessage>> = HashMap::new();
     let client = Client::new(openai_token);
 
     loop {
-        let (_, mut message) = module.get_message().await.unwrap();
+        let (_, mut message) = module.receive().await.unwrap();
         //if alfred.manage_module_info_request(topic, MODULE_NAME.to_string()).await { continue }
         println!("{:?}", message);
         let response_text = generate_response(&mut users_history, message.sender.clone(), message.text.clone(), &client, system_msg.clone());
         let (response_topic, response) = message.reply(response_text, MessageType::TEXT).expect("Error on create response");
-        module.publish(response_topic, &response).await.expect("Error on publish");
+        module.send(response_topic, &response).await.expect("Error on publish");
     }
 }
 
