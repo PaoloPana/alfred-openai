@@ -1,6 +1,7 @@
 use std::collections::HashMap;
 use alfred_rs::connection::{Receiver, Sender};
 use alfred_rs::error::Error;
+use alfred_rs::log::debug;
 use alfred_rs::message::MessageType;
 use alfred_rs::service_module::ServiceModule;
 use openai_api_rs::v1::api::Client;
@@ -23,9 +24,9 @@ async fn main() -> Result<(), Error> {
     let client = Client::new(openai_token);
 
     loop {
-        let (_, mut message) = module.receive().await.unwrap();
+        let (topic, mut message) = module.receive().await.unwrap();
         //if alfred.manage_module_info_request(topic, MODULE_NAME.to_string()).await { continue }
-        println!("{:?}", message);
+        debug!("{}: {:?}", topic, message);
         let response_text = generate_response(&mut users_history, message.sender.clone(), message.text.clone(), &client, system_msg.clone());
         let (response_topic, response) = message.reply(response_text, MessageType::TEXT).expect("Error on create response");
         module.send(response_topic, &response).await.expect("Error on publish");
@@ -45,8 +46,8 @@ fn generate_response(users_history: &mut HashMap<String, Vec<ChatCompletionMessa
     });
     let req = ChatCompletionRequest::new(GPT_MODEL.to_string(), history.to_vec());
     let result = client.chat_completion(req).unwrap();
-    let response_text = <Option<String> as Clone>::clone(&result.choices[0].message.content).expect("No message received");
-    println!("Content: {:?}", response_text);
+    let response_text = result.choices.get(0).unwrap().message.content.clone().expect("No message received");
+    debug!("Content: {:?}", response_text);
     history.push(ChatCompletionMessage {
         role: chat_completion::MessageRole::assistant,
         content: chat_completion::Content::Text(String::from(response_text.clone())),
