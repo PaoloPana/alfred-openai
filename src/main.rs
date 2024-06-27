@@ -1,66 +1,38 @@
-use std::collections::HashMap;
+mod chat;
+
+use std::error::Error;
 use alfred_rs::connection::{Receiver, Sender};
-use alfred_rs::error::Error;
 use alfred_rs::log::debug;
 use alfred_rs::message::MessageType;
 use alfred_rs::service_module::ServiceModule;
-use openai_api_rs::v1::api::Client;
-use openai_api_rs::v1::chat_completion;
-use openai_api_rs::v1::chat_completion::{ChatCompletionMessage, ChatCompletionRequest};
+use openai_api_rs::v1::common::GPT3_5_TURBO;
+use crate::chat::Chat;
 
 const MODULE_NAME: &str = "openai";
-const GPT_MODEL: &str = openai_api_rs::v1::common::GPT3_5_TURBO;
 
-#[tokio::main]
-async fn main() -> Result<(), Error> {
-    env_logger::init();
-    let mut module = ServiceModule::new(MODULE_NAME.to_string()).await?;
-    let openai_token = module.config.get_module_value("openai_token".to_string())
-        .expect("OPENAI_TOKEN needed");
+fn get_chat_manager(module: &ServiceModule) -> Result<Chat, Box<dyn Error>> {
+    let openai_api_key = module.config.get_module_value("openai_api_key".to_string())
+        .ok_or("openai_api_key needed")?;
     let system_msg = module.config.get_module_value("system_msg".to_string())
         .unwrap_or("".to_string());
-    module.listen("openai".to_string()).await.expect("Error during subscription to echo");
-    let mut users_history: HashMap<String, Vec<ChatCompletionMessage>> = HashMap::new();
-    let client = Client::new(openai_token);
+    let chat_model = module.config.get_module_value("chat_model".to_string())
+        .unwrap_or(GPT3_5_TURBO.to_string());
+    Ok(Chat::new(openai_api_key, chat_model, system_msg))
+}
+
+#[tokio::main]
+async fn main() -> Result<(), Box<dyn Error>> {
+    env_logger::init();
+    let mut module = ServiceModule::new(MODULE_NAME.to_string()).await?;
+    module.listen(MODULE_NAME.to_string()).await.expect(format!("Error during subscription to {MODULE_NAME}").as_str());
+    let mut chat_manager = get_chat_manager(&module)?;
 
     loop {
         let (topic, mut message) = module.receive().await.unwrap();
         //if alfred.manage_module_info_request(topic, MODULE_NAME.to_string()).await { continue }
         debug!("{}: {:?}", topic, message);
-        let response_text = generate_response(&mut users_history, message.sender.clone(), message.text.clone(), &client, system_msg.clone());
+        let response_text = chat_manager.generate_response(message.sender.clone(), message.text.clone());
         let (response_topic, response) = message.reply(response_text, MessageType::TEXT).expect("Error on create response");
         module.send(response_topic, &response).await.expect("Error on publish");
-    }
-}
-
-fn generate_response(users_history: &mut HashMap<String, Vec<ChatCompletionMessage>>, user: String, text: String, client: &Client, system_msg: String) -> String {
-    if !users_history.contains_key(&user.to_string()) {
-        users_history.insert(user.clone().to_string(), vec![generate_system_msg(system_msg)]);
-    }
-    let history: &mut Vec<ChatCompletionMessage> = users_history.get_mut(&user.clone()).unwrap();
-
-    history.push(ChatCompletionMessage {
-        role: chat_completion::MessageRole::user,
-        content: chat_completion::Content::Text(String::from(text.clone())),
-        name: None,
-    });
-    let req = ChatCompletionRequest::new(GPT_MODEL.to_string(), history.to_vec());
-    let result = client.chat_completion(req).unwrap();
-    let response_text = result.choices.get(0).unwrap().message.content.clone().expect("No message received");
-    debug!("Content: {:?}", response_text);
-    history.push(ChatCompletionMessage {
-        role: chat_completion::MessageRole::assistant,
-        content: chat_completion::Content::Text(String::from(response_text.clone())),
-        name: None,
-    });
-
-    response_text
-}
-
-fn generate_system_msg(system_msg: String) -> ChatCompletionMessage {
-    ChatCompletionMessage {
-        role: chat_completion::MessageRole::system,
-        content: chat_completion::Content::Text(system_msg),
-        name: None,
     }
 }

@@ -4,6 +4,6 @@ pub_port = "5678"
 sub_port = "1234"
 
 [openai]
-openai_token = ""
-callback = "openai.request"
+openai_api_key = ""
 system_msg = ""
+chat_model = "gpt-3.5-turbo"
