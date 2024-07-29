@@ -6,6 +6,6 @@ sub_port = "1234"
 [openai]
 openai_api_key = ""
 system_msg = ""
-chat_model = "gpt-3.5-turbo"
+chat_model = "gpt-4o"
 enable_stt = "true"
 enable_tts = "true"

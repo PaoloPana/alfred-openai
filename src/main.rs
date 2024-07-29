@@ -8,14 +8,14 @@ use alfred_rs::log;
 use alfred_rs::message::MessageType;
 use alfred_rs::service_module::ServiceModule;
 use openai_api_rs::v1::audio::{TTS_1, VOICE_ALLOY, WHISPER_1};
-use openai_api_rs::v1::common::GPT3_5_TURBO;
+use openai_api_rs::v1::common::GPT4_O;
 use uuid::Uuid;
 use crate::chat::Chat;
 use crate::stt::STT;
 use crate::tts::TTS;
 
 const MODULE_NAME: &str = "openai";
-const DEFAULT_GPT_MODEL: &str = GPT3_5_TURBO;
+const DEFAULT_GPT_MODEL: &str = GPT4_O;
 const STT_TOPIC: &str = "stt";
 const DEFAULT_STT_MODEL: &str = WHISPER_1;
 const TTS_TOPIC: &str = "tts";
@@ -92,7 +92,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
                     log::warn!("Message of type {} cannot be elaborated by {} topic", message.message_type, MODULE_NAME);
                     continue;
                 }
-                let response_text = chat_manager.generate_response(message.sender.clone(), message.text.clone());
+                let response_text = chat_manager.generate_response(message.sender.clone(), message.text.clone()).await;
                 let (response_topic, response) = message.reply(response_text, MessageType::TEXT).expect("Error on create response");
                 module.send(response_topic, &response).await.expect("Error on publish");
             },
@@ -105,7 +105,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
             TTS_TOPIC => {
                 let tts_manager = get_tts(&mut module)?.expect("Error loading TTS module");
                 let filename = format!("{}.mp3", Uuid::new_v4());
-                tts_manager.convert(message.text.clone(), filename.clone())?;
+                tts_manager.convert(message.text.clone(), filename.clone()).await?;
                 let (response_topic, response) = message.reply(filename, MessageType::AUDIO).expect("Error on create response");
                 module.send(response_topic, &response).await.expect("Error on publish");
             }
