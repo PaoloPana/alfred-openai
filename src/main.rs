@@ -104,7 +104,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
             },
             TTS_TOPIC => {
                 let tts_manager = get_tts(&mut module)?.expect("Error loading TTS module");
-                let filename = format!("{}.mp3", Uuid::new_v4());
+                let filename = format!("{}/{}.mp3", module.config.get_alfred_tmp_dir(), Uuid::new_v4());
                 tts_manager.convert(message.text.clone(), filename.clone()).await?;
                 let (response_topic, response) = message.reply(filename, MessageType::AUDIO).expect("Error on create response");
                 module.send(response_topic, &response).await.expect("Error on publish");
