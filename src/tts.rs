@@ -1,30 +1,62 @@
-use openai_api_rs::v1::api::OpenAIClient;
-use openai_api_rs::v1::audio::AudioSpeechRequest;
+pub mod openai;
 
-pub struct TTS {
-    client: OpenAIClient,
-    model: String,
-    voice: String
+use std::error::Error;
+use alfred_rs::config::Config;
+use alfred_rs::connection::{Receiver, Sender};
+use alfred_rs::log;
+use alfred_rs::message::MessageType;
+use alfred_rs::service_module::ServiceModule;
+use openai_api_rs::v1::audio::{TTS_1, VOICE_ALLOY};
+use uuid::Uuid;
+use openai::tts::TTS;
+
+const MODULE_NAME: &str = "openai-tts";
+const TTS_TOPIC: &str = "tts";
+const DEFAULT_TTS_MODEL: &str = TTS_1;
+const DEFAULT_TTS_VOICE: &str = VOICE_ALLOY;
+
+
+fn get_tts(module: &mut ServiceModule) -> Result<Option<TTS>, Box<dyn Error>> {
+    let openai_api_key = module.config.get_module_value("openai_api_key".to_string())
+        .ok_or("openai_api_key needed")?;
+    let tts_model = module.config.get_module_value("tts_model".to_string())
+        .unwrap_or(DEFAULT_TTS_MODEL.to_string());
+    let tts_voice = module.config.get_module_value("tts_voice".to_string())
+        .unwrap_or(DEFAULT_TTS_VOICE.to_string());
+    Ok(Some(TTS::new(openai_api_key, tts_model, tts_voice)))
 }
-impl TTS {
-    pub fn new(api_key: String, model: String, voice: String) -> TTS {
-        TTS {
-            client: OpenAIClient::new(api_key),
-            model,
-            voice
-        }
-    }
 
-    pub async fn convert(self, text: String, out_file_path: String) -> Result<bool, String> {
-        let req = AudioSpeechRequest::new(
-            self.model.to_string(),
-            text,
-            self.voice.clone(),
-            out_file_path
-        );
-        self.client.audio_speech(req)
-            .await
-            .map(|res| res.result)
-            .map_err(|e| e.to_string())
+async fn setup_tts(module: &mut ServiceModule) -> Result<(), Box<dyn Error>> {
+    let is_tts_enable = module.config.get_module_value("enable_tts".to_string())
+        .map(|s| s == "true" )
+        .unwrap_or(false);
+    if !is_tts_enable {
+        return Ok(())
+    }
+    log::debug!("Loading TTS...");
+    module.listen(TTS_TOPIC.to_string()).await
+        .map_err(|e| e.into())
+}
+
+#[tokio::main]
+async fn main() -> Result<(), Box<dyn Error>> {
+    env_logger::init();
+    let config = Config::read(Some("openai".to_string()))?;
+    let mut module = ServiceModule::new_with_custom_config(MODULE_NAME.to_string(), config).await?;
+    setup_tts(&mut module).await?;
+
+    loop {
+        let (topic, mut message) = module.receive().await.unwrap();
+        log::debug!("{}: {:?}", topic, message);
+        match topic.as_str() {
+            TTS_TOPIC => {
+                let tts_manager = get_tts(&mut module)?.expect("Error loading TTS module");
+                let filename = format!("{}/{}.mp3", module.config.get_alfred_tmp_dir(), Uuid::new_v4());
+                tts_manager.convert(message.text.clone(), filename.clone()).await?;
+                let (response_topic, response) = message.reply(filename, MessageType::AUDIO).expect("Error on create response");
+                module.send(response_topic, &response).await.expect("Error on publish");
+            }
+            _ => {}
+        }
     }
 }

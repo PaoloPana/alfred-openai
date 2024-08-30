@@ -1,62 +1,49 @@
-use std::collections::HashMap;
-use alfred_rs::log::debug;
-use openai_api_rs::v1::api::OpenAIClient;
-use openai_api_rs::v1::chat_completion;
-use openai_api_rs::v1::chat_completion::{ChatCompletionMessage, ChatCompletionRequest};
+pub mod openai;
 
-pub struct Chat {
-    users_history: HashMap<String, Vec<ChatCompletionMessage>>,
-    client: OpenAIClient,
-    chat_model: String,
-    system_msg: String
-}
-impl Chat {
-    pub fn new(api_key: String, chat_model: String, system_msg: String) -> Chat {
-        Chat {
-            users_history: HashMap::new(),
-            client: OpenAIClient::new(api_key),
-            chat_model,
-            system_msg
-        }
-    }
+use openai::chat::Chat;
+use std::error::Error;
+use alfred_rs::config::Config;
+use alfred_rs::connection::{Receiver, Sender};
+use alfred_rs::log;
+use alfred_rs::message::MessageType;
+use alfred_rs::service_module::ServiceModule;
+use openai_api_rs::v1::common::GPT4_O;
 
-    pub async fn generate_response(&mut self, user: String, text: String) -> String {
-        if !self.users_history.contains_key(&user.to_string()) {
-            self.users_history.insert(user.clone().to_string(), vec![generate_system_msg(self.system_msg.clone())]);
-        }
-        let history: &mut Vec<ChatCompletionMessage> = self.users_history.get_mut(&user.clone()).unwrap();
+const MODULE_NAME: &str = "openai-chat";
+const DEFAULT_GPT_MODEL: &str = GPT4_O;
 
-        history.push(ChatCompletionMessage {
-            role: chat_completion::MessageRole::user,
-            content: chat_completion::Content::Text(String::from(text.clone())),
-            name: None,
-            tool_calls: None,
-            tool_call_id: None,
-        });
-        let req = ChatCompletionRequest::new(self.chat_model.clone(), history.to_vec());
-        let result = self.client.chat_completion(req).await.unwrap();
-        let response_text = result.choices.get(0).unwrap().message.content.clone().expect("No message received");
-        debug!("Content: {:?}", response_text);
-        history.push(ChatCompletionMessage {
-            role: chat_completion::MessageRole::assistant,
-            content: chat_completion::Content::Text(String::from(response_text.clone())),
-            name: None,
-            tool_calls: None,
-            tool_call_id: None,
-        });
-
-        response_text
-    }
-
-
+async fn get_chat_manager(module: &mut ServiceModule) -> Result<Chat, Box<dyn Error>> {
+    let openai_api_key = module.config.get_module_value("openai_api_key".to_string())
+        .ok_or("openai_api_key needed")?;
+    let system_msg = module.config.get_module_value("system_msg".to_string())
+        .unwrap_or("".to_string());
+    let chat_model = module.config.get_module_value("chat_model".to_string())
+        .unwrap_or(DEFAULT_GPT_MODEL.to_string());
+    module.listen(MODULE_NAME.to_string()).await.expect(format!("Error during subscription to {MODULE_NAME}").as_str());
+    Ok(Chat::new(openai_api_key, chat_model, system_msg))
 }
 
-fn generate_system_msg(system_msg: String) -> ChatCompletionMessage {
-    ChatCompletionMessage {
-        role: chat_completion::MessageRole::system,
-        content: chat_completion::Content::Text(system_msg),
-        name: None,
-        tool_calls: None,
-        tool_call_id: None,
+#[tokio::main]
+async fn main() -> Result<(), Box<dyn Error>> {
+    env_logger::init();
+    let config = Config::read(Some("openai".to_string()))?;
+    let mut module = ServiceModule::new_with_custom_config(MODULE_NAME.to_string(), config).await?;
+    let mut chat_manager = get_chat_manager(&mut module).await?;
+
+    loop {
+        let (topic, mut message) = module.receive().await.unwrap();
+        log::debug!("{}: {:?}", topic, message);
+        match topic.as_str() {
+            MODULE_NAME => {
+                if message.message_type != MessageType::TEXT {
+                    log::warn!("Message of type {} cannot be elaborated by {} topic", message.message_type, MODULE_NAME);
+                    continue;
+                }
+                let response_text = chat_manager.generate_response(message.sender.clone(), message.text.clone()).await;
+                let (response_topic, response) = message.reply(response_text, MessageType::TEXT).expect("Error on create response");
+                module.send(response_topic, &response).await.expect("Error on publish");
+            },
+            _ => {}
+        }
     }
 }

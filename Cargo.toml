@@ -9,3 +9,15 @@ alfred-rs = { path = "../alfred-rs" }
 tokio = "1.37.0"
 env_logger = "0.11.3"
 uuid = { version = "1.9.1", features = ["v4"] }
+
+[[bin]]
+name = "alfred-openai-chat"
+path = "src/chat.rs"
+
+[[bin]]
+name = "alfred-openai-stt"
+path = "src/stt.rs"
+
+[[bin]]
+name = "alfred-openai-tts"
+path = "src/tts.rs"
