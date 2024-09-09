@@ -46,7 +46,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
     setup_tts(&mut module).await?;
 
     loop {
-        let (topic, mut message) = module.receive().await.unwrap();
+        let (topic, message) = module.receive().await.unwrap();
         log::debug!("{}: {:?}", topic, message);
         match topic.as_str() {
             TTS_TOPIC => {

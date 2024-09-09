@@ -10,6 +10,8 @@ use alfred_rs::service_module::ServiceModule;
 use openai_api_rs::v1::common::GPT4_O;
 
 const MODULE_NAME: &str = "openai-chat";
+const INPUT_TOPIC: &str = "chat";
+
 const DEFAULT_GPT_MODEL: &str = GPT4_O;
 
 async fn get_chat_manager(module: &mut ServiceModule) -> Result<Chat, Box<dyn Error>> {
@@ -19,7 +21,7 @@ async fn get_chat_manager(module: &mut ServiceModule) -> Result<Chat, Box<dyn Er
         .unwrap_or("".to_string());
     let chat_model = module.config.get_module_value("chat_model".to_string())
         .unwrap_or(DEFAULT_GPT_MODEL.to_string());
-    module.listen(MODULE_NAME.to_string()).await.expect(format!("Error during subscription to {MODULE_NAME}").as_str());
+    module.listen(INPUT_TOPIC.to_string()).await.expect(format!("Error during subscription to {MODULE_NAME}").as_str());
     Ok(Chat::new(openai_api_key, chat_model, system_msg))
 }
 
@@ -34,7 +36,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
         let (topic, mut message) = module.receive().await.unwrap();
         log::debug!("{}: {:?}", topic, message);
         match topic.as_str() {
-            MODULE_NAME => {
+            INPUT_TOPIC => {
                 if message.message_type != MessageType::TEXT {
                     log::warn!("Message of type {} cannot be elaborated by {} topic", message.message_type, MODULE_NAME);
                     continue;
