@@ -4,7 +4,7 @@ use std::error::Error;
 use alfred_rs::config::Config;
 use alfred_rs::connection::{Receiver, Sender};
 use alfred_rs::log;
-use alfred_rs::message::MessageType;
+use alfred_rs::message::{Message, MessageType};
 use alfred_rs::service_module::ServiceModule;
 use openai_api_rs::v1::audio::{TTS_1, VOICE_ALLOY};
 use uuid::Uuid;
@@ -14,6 +14,8 @@ const MODULE_NAME: &str = "openai-tts";
 const TTS_TOPIC: &str = "tts";
 const DEFAULT_TTS_MODEL: &str = TTS_1;
 const DEFAULT_TTS_VOICE: &str = VOICE_ALLOY;
+const TTS_STARTED_EVENT: &'static str = "tts_started";
+const TTS_ENDED_EVENT: &'static str = "tts_ended";
 
 
 fn get_tts(module: &mut ServiceModule) -> Result<Option<TTS>, Box<dyn Error>> {
@@ -50,9 +52,11 @@ async fn main() -> Result<(), Box<dyn Error>> {
         log::debug!("{}: {:?}", topic, message);
         match topic.as_str() {
             TTS_TOPIC => {
+                module.send_event(MODULE_NAME.to_string(), TTS_STARTED_EVENT.to_string(), &Message::default()).await?;
                 let tts_manager = get_tts(&mut module)?.expect("Error loading TTS module");
                 let filename = format!("{}/{}.mp3", module.config.get_alfred_tmp_dir(), Uuid::new_v4());
                 tts_manager.convert(message.text.clone(), filename.clone()).await?;
+                module.send_event(MODULE_NAME.to_string(), TTS_ENDED_EVENT.to_string(), &Message::default()).await?;
                 let (response_topic, response) = message.reply(filename, MessageType::AUDIO).expect("Error on create response");
                 module.send(response_topic, &response).await.expect("Error on publish");
             }

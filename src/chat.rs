@@ -5,14 +5,16 @@ use std::error::Error;
 use alfred_rs::config::Config;
 use alfred_rs::connection::{Receiver, Sender};
 use alfred_rs::log;
-use alfred_rs::message::MessageType;
+use alfred_rs::message::{Message, MessageType};
 use alfred_rs::service_module::ServiceModule;
 use openai_api_rs::v1::common::GPT4_O;
 
 const MODULE_NAME: &str = "openai-chat";
 const INPUT_TOPIC: &str = "chat";
-
 const DEFAULT_GPT_MODEL: &str = GPT4_O;
+const CHAT_STARTED_EVENT: &'static str = "chat_started";
+
+const CHAT_ENDED_EVENT: &'static str = "chat_ended";
 
 async fn get_chat_manager(module: &mut ServiceModule) -> Result<Chat, Box<dyn Error>> {
     let openai_api_key = module.config.get_module_value("openai_api_key".to_string())
@@ -33,7 +35,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
     let mut chat_manager = get_chat_manager(&mut module).await?;
 
     loop {
-        let (topic, mut message) = module.receive().await.unwrap();
+        let (topic, message) = module.receive().await.unwrap();
         log::debug!("{}: {:?}", topic, message);
         match topic.as_str() {
             INPUT_TOPIC => {
@@ -41,7 +43,9 @@ async fn main() -> Result<(), Box<dyn Error>> {
                     log::warn!("Message of type {} cannot be elaborated by {} topic", message.message_type, MODULE_NAME);
                     continue;
                 }
+                module.send_event(MODULE_NAME.to_string(), CHAT_STARTED_EVENT.to_string(), &Message::default()).await?;
                 let response_text = chat_manager.generate_response(message.sender.clone(), message.text.clone()).await;
+                module.send_event(MODULE_NAME.to_string(), CHAT_ENDED_EVENT.to_string(), &Message::default()).await?;
                 let (response_topic, response) = message.reply(response_text, MessageType::TEXT).expect("Error on create response");
                 module.send(response_topic, &response).await.expect("Error on publish");
             },
