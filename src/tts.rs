@@ -10,7 +10,7 @@ use openai_api_rs::v1::audio::{TTS_1, VOICE_ALLOY};
 use uuid::Uuid;
 use openai::tts::TTS;
 
-const MODULE_NAME: &str = "openai-tts";
+const MODULE_NAME: &str = "openai_tts";
 const TTS_TOPIC: &str = "tts";
 const DEFAULT_TTS_MODEL: &str = TTS_1;
 const DEFAULT_TTS_VOICE: &str = VOICE_ALLOY;

@@ -9,7 +9,7 @@ use alfred_rs::service_module::ServiceModule;
 use openai_api_rs::v1::audio::WHISPER_1;
 use openai::stt::STT;
 
-const MODULE_NAME: &str = "openai-stt";
+const MODULE_NAME: &str = "openai_stt";
 const STT_TOPIC: &str = "stt";
 const DEFAULT_STT_MODEL: &str = WHISPER_1;
 const STT_STARTED_EVENT: &'static str = "stt_started";

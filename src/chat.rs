@@ -9,7 +9,7 @@ use alfred_rs::message::{Message, MessageType};
 use alfred_rs::service_module::ServiceModule;
 use openai_api_rs::v1::common::GPT4_O;
 
-const MODULE_NAME: &str = "openai-chat";
+const MODULE_NAME: &str = "openai_chat";
 const INPUT_TOPIC: &str = "chat";
 const DEFAULT_GPT_MODEL: &str = GPT4_O;
 const CHAT_STARTED_EVENT: &'static str = "chat_started";
