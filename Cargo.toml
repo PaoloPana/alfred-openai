@@ -4,11 +4,10 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-openai-api-rs = "5.0.8"
+openai-api-rs = "5.0.12"
 alfred-rs = { path = "../alfred-rs" }
-tokio = "1.37.0"
-env_logger = "0.11.3"
-uuid = { version = "1.9.1", features = ["v4"] }
+env_logger = "0.11.5"
+uuid = { version = "1.10.0", features = ["v4"] }
 
 [[bin]]
 name = "alfred-openai-chat"
