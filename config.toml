@@ -6,6 +6,8 @@ sub_port = 1234
 [openai]
 openai_api_key = ""
 system_msg = ""
-chat_model = "gpt-4o"
-enable_stt = "true"
 enable_tts = "true"
+tts_model = "tts-1"
+tts_voice = "alloy"
+enable_stt = "true"
+stt_model = "whisper-1"
