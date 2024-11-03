@@ -7,8 +7,8 @@ pub struct TTS {
     voice: String
 }
 impl TTS {
-    pub fn new(api_key: String, model: String, voice: String) -> TTS {
-        TTS {
+    pub fn new(api_key: String, model: String, voice: String) -> Self {
+        Self {
             client: OpenAIClient::new(api_key),
             model,
             voice

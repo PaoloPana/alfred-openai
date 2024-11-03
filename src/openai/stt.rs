@@ -7,8 +7,8 @@ pub struct STT {
 }
 
 impl STT {
-    pub fn new(api_key: String, model: String) -> STT {
-        STT {
+    pub fn new(api_key: String, model: String) -> Self {
+        Self {
             client: OpenAIClient::new(api_key),
             model,
         }
