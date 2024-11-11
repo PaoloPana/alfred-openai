@@ -2,7 +2,6 @@ pub mod openai;
 
 use std::error::Error;
 use alfred_rs::config::Config;
-use alfred_rs::connection::{Receiver, Sender};
 use alfred_rs::{log, tokio};
 use alfred_rs::message::{Message, MessageType};
 use alfred_rs::AlfredModule;
