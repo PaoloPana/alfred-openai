@@ -2,7 +2,7 @@ use std::collections::HashMap;
 use std::error::Error;
 use std::fmt::{Display, Formatter};
 use alfred_rs::log::debug;
-use openai_api_rs::v1::api::OpenAIClient;
+use openai_api_rs::v1::api::{OpenAIClient, OpenAIClientBuilder};
 use openai_api_rs::v1::chat_completion;
 use openai_api_rs::v1::chat_completion::{ChatCompletionMessage, ChatCompletionRequest};
 
@@ -41,17 +41,21 @@ pub struct Chat {
     system_msg: SystemMsg
 }
 impl Chat {
-    pub fn new(api_key: String, chat_model: String, system_msg_intro: String) -> Self {
-        Self {
+    pub fn new(api_key: String, chat_model: String, system_msg_intro: String) -> Result<Self, Box<dyn Error>> {
+        Ok(Self {
             users_history: HashMap::new(),
-            client: OpenAIClient::new(api_key),
+            client: OpenAIClientBuilder::new().with_api_key(api_key).build()?,
             chat_model,
             system_msg: SystemMsg::new(system_msg_intro)
-        }
+        })
     }
 
     pub fn update_capability(&mut self, capability: &str, message: &str) {
         self.system_msg.update_capability(capability, message);
+    }
+
+    pub const fn get_capabilities(&self) -> &HashMap<String, String> {
+        &self.system_msg.capabilities
     }
 
     pub async fn generate_response(&mut self, user: String, text: String) -> Result<String, Box<dyn Error>> {

@@ -1,4 +1,5 @@
-use openai_api_rs::v1::api::OpenAIClient;
+use std::error::Error;
+use openai_api_rs::v1::api::{OpenAIClient, OpenAIClientBuilder};
 use openai_api_rs::v1::audio::AudioSpeechRequest;
 
 pub struct TTS {
@@ -7,12 +8,12 @@ pub struct TTS {
     voice: String
 }
 impl TTS {
-    pub fn new(api_key: String, model: String, voice: String) -> Self {
-        Self {
-            client: OpenAIClient::new(api_key),
+    pub fn new(api_key: String, model: String, voice: String) -> Result<Self, Box<dyn Error>> {
+        Ok(Self {
+            client: OpenAIClientBuilder::new().with_api_key(api_key).build()?,
             model,
             voice
-        }
+        })
     }
 
     pub async fn convert(self, text: String, out_file_path: String) -> Result<bool, String> {

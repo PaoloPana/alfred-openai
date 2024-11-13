@@ -1,4 +1,5 @@
-use openai_api_rs::v1::api::OpenAIClient;
+use std::error::Error;
+use openai_api_rs::v1::api::{OpenAIClient, OpenAIClientBuilder};
 use openai_api_rs::v1::audio::AudioTranscriptionRequest;
 
 pub struct STT {
@@ -7,14 +8,14 @@ pub struct STT {
 }
 
 impl STT {
-    pub fn new(api_key: String, model: String) -> Self {
-        Self {
-            client: OpenAIClient::new(api_key),
+    pub fn new(api_key: String, model: String) -> Result<Self, Box<dyn Error>> {
+        Ok(Self {
+            client: OpenAIClientBuilder::new().with_api_key(api_key).build()?,
             model,
-        }
+        })
     }
 
-    pub async fn send_stt_file(self, filename: String) -> Result<String, Box<dyn std::error::Error>> {
+    pub async fn send_stt_file(self, filename: String) -> Result<String, Box<dyn Error>> {
         let request = AudioTranscriptionRequest::new(filename, self.model);
         Ok(
             self.client.audio_transcription(request)
@@ -23,7 +24,7 @@ impl STT {
         )
     }
 
-    pub async fn convert(self, filename: String) -> Result<String, Box<dyn std::error::Error>> {
+    pub async fn convert(self, filename: String) -> Result<String, Box<dyn Error>> {
         self.send_stt_file(filename).await
     }
 }

@@ -14,12 +14,12 @@ const DEFAULT_STT_MODEL: &str = WHISPER_1;
 const STT_STARTED_EVENT: &str = "stt_started";
 const STT_ENDED_EVENT: &str = "stt_ended";
 
-fn get_stt(module: &AlfredModule) -> Result<Option<STT>, Box<dyn Error>> {
+fn get_stt(module: &AlfredModule) -> Result<STT, Box<dyn Error>> {
     let openai_api_key = module.config.get_module_value("openai_api_key")
         .ok_or("openai_api_key needed")?;
     let stt_model = module.config.get_module_value("stt_model")
         .unwrap_or_else(|| DEFAULT_STT_MODEL.to_string());
-    Ok(Some(STT::new(openai_api_key, stt_model)))
+    STT::new(openai_api_key, stt_model)
 }
 
 async fn setup_stt(module: &mut AlfredModule) -> Result<(), Box<dyn Error>> {
@@ -47,7 +47,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
             let (response_text, response_type) = match message.message_type {
                 MessageType::Audio => {
                     module.send_event(MODULE_NAME, STT_STARTED_EVENT, &Message::default()).await?;
-                    let stt_manager = get_stt(&module)?.expect("Error loading STT module");
+                    let stt_manager = get_stt(&module)?;
                     let response_text = stt_manager.convert(message.text.clone()).await.map_err(|e| e.to_string())?;
                     module.send_event(MODULE_NAME, STT_ENDED_EVENT, &Message::default()).await?;
                     (response_text, MessageType::Text)

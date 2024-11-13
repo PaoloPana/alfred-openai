@@ -17,14 +17,14 @@ const TTS_STARTED_EVENT: &str = "tts_started";
 const TTS_ENDED_EVENT: &str = "tts_ended";
 
 
-fn get_tts(module: &AlfredModule) -> Result<Option<TTS>, Box<dyn Error>> {
+fn get_tts(module: &AlfredModule) -> Result<TTS, Box<dyn Error>> {
     let openai_api_key = module.config.get_module_value("openai_api_key")
         .ok_or("openai_api_key needed")?;
     let tts_model = module.config.get_module_value("tts_model")
         .unwrap_or_else(|| DEFAULT_TTS_MODEL.to_string());
     let tts_voice = module.config.get_module_value("tts_voice")
         .unwrap_or_else(|| DEFAULT_TTS_VOICE.to_string());
-    Ok(Some(TTS::new(openai_api_key, tts_model, tts_voice)))
+    TTS::new(openai_api_key, tts_model, tts_voice)
 }
 
 async fn setup_tts(module: &mut AlfredModule) -> Result<(), Box<dyn Error>> {
@@ -50,7 +50,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
         log::debug!("{}: {:?}", topic, message);
         if topic == TTS_TOPIC {
             module.send_event(MODULE_NAME, TTS_STARTED_EVENT, &Message::default()).await?;
-            let tts_manager = get_tts(&module)?.expect("Error loading TTS module");
+            let tts_manager = get_tts(&module)?;
             let filename = format!("{}/{}.mp3", module.config.alfred.tmp_dir, Uuid::new_v4());
             tts_manager.convert(message.text.clone(), filename.clone()).await?;
             module.send_event(MODULE_NAME, TTS_ENDED_EVENT, &Message::default()).await?;
