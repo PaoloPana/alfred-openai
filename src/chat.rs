@@ -7,7 +7,7 @@ use alfred_rs::{log, tokio};
 use alfred_rs::log::warn;
 use alfred_rs::message::{Message, MessageType};
 use alfred_rs::AlfredModule;
-use alfred_rs::connection::MODULE_INFO_TOPIC_RESPONSE;
+use alfred_rs::connection::{MODULE_INFO_TOPIC_REQUEST, MODULE_INFO_TOPIC_RESPONSE};
 use openai_api_rs::v1::common::GPT4_O;
 
 const MODULE_NAME: &str = "openai_chat";
@@ -28,6 +28,7 @@ async fn get_chat_manager(module: &mut AlfredModule) -> Result<Chat, Box<dyn Err
     module.listen(INPUT_TOPIC).await?;
     module.listen(INPUT_DEBUG_TOPIC).await?;
     module.listen(MODULE_INFO_TOPIC_RESPONSE).await?;
+    module.send(MODULE_INFO_TOPIC_REQUEST, &Message::default()).await?;
     Chat::new(openai_api_key, chat_model, system_msg_intro)
 }
 
