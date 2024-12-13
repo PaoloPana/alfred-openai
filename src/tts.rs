@@ -42,7 +42,7 @@ async fn setup_tts(module: &mut AlfredModule) -> Result<(), Box<dyn Error>> {
 async fn main() -> Result<(), Box<dyn Error>> {
     env_logger::init();
     let config = Config::read(Some("openai"));
-    let mut module = AlfredModule::new_with_details(MODULE_NAME, Some(config), None).await?;
+    let mut module = AlfredModule::new_with_details(MODULE_NAME, env!("CARGO_PKG_VERSION"), Some(config), None).await?;
     setup_tts(&mut module).await?;
 
     loop {

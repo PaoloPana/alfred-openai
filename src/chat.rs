@@ -36,7 +36,7 @@ async fn get_chat_manager(module: &mut AlfredModule) -> Result<Chat, Box<dyn Err
 async fn main() -> Result<(), Box<dyn Error>> {
     env_logger::init();
     let config = Config::read(Some("openai"));
-    let mut module = AlfredModule::new_with_details(MODULE_NAME, Some(config), None).await?;
+    let mut module = AlfredModule::new_with_details(MODULE_NAME, env!("CARGO_PKG_VERSION"), Some(config), None).await?;
     let mut chat_manager = get_chat_manager(&mut module).await?;
 
     loop {
