@@ -3,7 +3,7 @@ pub mod openai;
 use openai::chat::Chat;
 use std::error::Error;
 use alfred_rs::config::Config;
-use alfred_rs::{log, tokio};
+use alfred_rs::{log, tokio, ModuleDetailsBuilder};
 use alfred_rs::log::warn;
 use alfred_rs::message::{Message, MessageType};
 use alfred_rs::AlfredModule;
@@ -36,7 +36,12 @@ async fn get_chat_manager(module: &mut AlfredModule) -> Result<Chat, Box<dyn Err
 async fn main() -> Result<(), Box<dyn Error>> {
     env_logger::init();
     let config = Config::read(Some("openai"));
-    let mut module = AlfredModule::new_with_details(MODULE_NAME, env!("CARGO_PKG_VERSION"), Some(config), None).await?;
+    let module_details = ModuleDetailsBuilder::new()
+        .module_name(MODULE_NAME)
+        .version(env!("CARGO_PKG_VERSION"))
+        .config(Some(config))
+        .build();
+    let mut module = AlfredModule::new_with_details(module_details).await?;
     let mut chat_manager = get_chat_manager(&mut module).await?;
 
     loop {
