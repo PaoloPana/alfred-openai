@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 use std::error::Error;
 use std::fmt::{Display, Formatter};
-use alfred_rs::log::debug;
+use alfred_core::log::debug;
 use openai_api_rs::v1::api::{OpenAIClient, OpenAIClientBuilder};
 use openai_api_rs::v1::chat_completion;
 use openai_api_rs::v1::chat_completion::{ChatCompletionMessage, ChatCompletionRequest};
