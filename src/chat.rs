@@ -2,12 +2,12 @@ pub mod openai;
 
 use openai::chat::Chat;
 use std::error::Error;
-use alfred_rs::config::Config;
-use alfred_rs::{log, tokio, ModuleDetailsBuilder};
-use alfred_rs::log::warn;
-use alfred_rs::message::{Message, MessageType};
-use alfred_rs::AlfredModule;
-use alfred_rs::connection::{MODULE_INFO_TOPIC_REQUEST, MODULE_INFO_TOPIC_RESPONSE};
+use alfred_core::config::Config;
+use alfred_core::{log, tokio, ModuleDetailsBuilder};
+use alfred_core::log::warn;
+use alfred_core::message::{Message, MessageType};
+use alfred_core::AlfredModule;
+use alfred_core::connection::{MODULE_INFO_TOPIC_REQUEST, MODULE_INFO_TOPIC_RESPONSE};
 use openai_api_rs::v1::common::GPT4_O;
 
 const MODULE_NAME: &str = "openai_chat";

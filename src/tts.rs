@@ -1,10 +1,10 @@
 pub mod openai;
 
 use std::error::Error;
-use alfred_rs::config::Config;
-use alfred_rs::{log, tokio, ModuleDetailsBuilder};
-use alfred_rs::message::{Message, MessageType};
-use alfred_rs::AlfredModule;
+use alfred_core::config::Config;
+use alfred_core::{log, tokio, ModuleDetailsBuilder};
+use alfred_core::message::{Message, MessageType};
+use alfred_core::AlfredModule;
 use openai_api_rs::v1::audio::{TTS_1, VOICE_ALLOY};
 use uuid::Uuid;
 use openai::tts::TTS;
