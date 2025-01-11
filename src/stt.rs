@@ -19,7 +19,8 @@ fn get_stt(module: &AlfredModule) -> Result<STT, Box<dyn Error>> {
         .ok_or("openai_api_key needed")?;
     let stt_model = module.config.get_module_value("stt_model")
         .unwrap_or_else(|| DEFAULT_STT_MODEL.to_string());
-    STT::new(openai_api_key, stt_model)
+    let language = module.config.get_module_value("stt_language");
+    STT::new(openai_api_key, stt_model, language)
 }
 
 async fn setup_stt(module: &mut AlfredModule) -> Result<(), Box<dyn Error>> {
