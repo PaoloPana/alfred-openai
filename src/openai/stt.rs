@@ -5,20 +5,26 @@ use openai_api_rs::v1::audio::AudioTranscriptionRequest;
 pub struct STT {
     client: OpenAIClient,
     model: String,
+    language: Option<String>,
 }
 
 impl STT {
-    pub fn new(api_key: String, model: String) -> Result<Self, Box<dyn Error>> {
+    pub fn new(api_key: String, model: String, language: Option<String>) -> Result<Self, Box<dyn Error>> {
         Ok(Self {
             client: OpenAIClientBuilder::new().with_api_key(api_key).build()?,
             model,
+            language
         })
     }
 
     pub async fn send_stt_file(self, filename: String) -> Result<String, Box<dyn Error>> {
-        let request = AudioTranscriptionRequest::new(filename, self.model);
+        let mut request = AudioTranscriptionRequest::new(filename, self.model);
+        if let Some(language) = self.language {
+            request = request.language(language);
+        }
         Ok(
-            self.client.audio_transcription(request)
+            self.client
+                .audio_transcription(request)
                 .await?
                 .text
         )
