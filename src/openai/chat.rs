@@ -38,7 +38,7 @@ impl Display for SystemMsg {
 pub struct Chat {
     users_history: HashMap<String, Vec<ChatCompletionMessage>>,
     client: OpenAIClient,
-    chat_model: String,
+    model: String,
     system_msg: SystemMsg
 }
 impl Chat {
@@ -46,7 +46,7 @@ impl Chat {
         Ok(Self {
             users_history: HashMap::new(),
             client: OpenAIClientBuilder::new().with_api_key(api_key).build()?,
-            chat_model,
+            model: chat_model,
             system_msg: SystemMsg::new(system_msg_intro)
         })
     }
@@ -60,7 +60,7 @@ impl Chat {
     }
 
     pub async fn generate_response(&mut self, user: String, text: String) -> Result<String, Box<dyn Error>> {
-        if !self.users_history.contains_key(&user.to_string()) {
+        if !self.users_history.contains_key(&user) {
             self.users_history.insert(user.clone(), vec![]);
         }
         let history = self.users_history.get_mut(&user.clone()).ok_or("User not found")?;
@@ -75,7 +75,7 @@ impl Chat {
         let mut messages = vec![generate_system_msg(self.system_msg.to_string())];
         messages.append(&mut history.clone());
         let req = ChatCompletionRequest::new(
-            self.chat_model.clone(),
+            self.model.clone(),
             messages
         );
         let result = self.client.chat_completion(req).await?;
@@ -83,7 +83,7 @@ impl Chat {
             .ok_or("choices array not found in OpenAI response")?
             .message.content.clone()
             .ok_or("No message received")?;
-        debug!("Content: {:?}", response_text);
+        debug!("Content: {response_text:?}");
         history.push(ChatCompletionMessage {
             role: chat_completion::MessageRole::assistant,
             content: chat_completion::Content::Text(response_text.clone()),

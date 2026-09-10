@@ -18,7 +18,7 @@ impl TTS {
 
     pub async fn convert(self, text: String, out_file_path: String) -> Result<bool, String> {
         let req = AudioSpeechRequest::new(
-            self.model.to_string(),
+            self.model.clone(),
             text,
             self.voice.clone(),
             out_file_path

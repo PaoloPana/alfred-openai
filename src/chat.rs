@@ -46,18 +46,18 @@ async fn main() -> Result<(), Box<dyn Error>> {
 
     loop {
         if let Err(e) = chat_handler(&mut module, &mut chat_manager).await {
-            warn!("Error while handling chat: {}", e);
+            warn!("Error while handling chat: {e}");
         }
     }
 }
 
 async fn chat_handler(module: &mut AlfredModule, chat_manager: &mut Chat) -> Result<(), Box<dyn Error>> {
     let (topic, message) = module.receive().await?;
-    log::debug!("{}: {:?}", topic, message);
+    log::debug!("{topic}: {message:?}");
     match topic.as_str() {
         INPUT_TOPIC => {
             if message.message_type != MessageType::Text {
-                return Err(format!("Message of type {} cannot be elaborated by {} topic", message.message_type, MODULE_NAME))?;
+                Err(format!("Message of type {} cannot be elaborated by {} topic", message.message_type, MODULE_NAME))?;
             }
             module.send_event(MODULE_NAME, CHAT_STARTED_EVENT, &Message::default()).await?;
             let response_text = chat_manager.generate_response(message.sender.clone(), message.text.clone()).await?;

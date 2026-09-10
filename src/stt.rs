@@ -48,7 +48,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
 
     loop {
         let (topic, message) = module.receive().await?;
-        log::debug!("{}: {:?}", topic, message);
+        log::debug!("{topic}: {message:?}");
         if topic == STT_TOPIC {
             let (response_text, response_type) = match message.message_type {
                 MessageType::Audio => {
@@ -58,7 +58,8 @@ async fn main() -> Result<(), Box<dyn Error>> {
                     module.send_event(MODULE_NAME, STT_ENDED_EVENT, &Message::default()).await?;
                     (response_text, MessageType::Text)
                 }
-                MessageType::Unknown | MessageType::Text | MessageType::Photo | MessageType::ModuleInfo => {
+                MessageType::Unknown | MessageType::Text | MessageType::Photo | MessageType::ModuleInfo
+                | MessageType::StreamText | MessageType::StreamAudio | MessageType::StreamPhoto => {
                     (message.text.clone(), message.message_type.clone())
                 }
             };

@@ -52,7 +52,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
 
     loop {
         let (topic, message) = module.receive().await?;
-        log::debug!("{}: {:?}", topic, message);
+        log::debug!("{topic}: {message:?}");
         if topic == TTS_TOPIC {
             module.send_event(MODULE_NAME, TTS_STARTED_EVENT, &Message::default()).await?;
             let tts_manager = get_tts(&module)?;
