@@ -18,14 +18,14 @@ impl TTS {
 
     pub async fn convert(self, text: String, out_file_path: String) -> Result<bool, String> {
         let req = AudioSpeechRequest::new(
-            self.model.to_string(),
+            self.model.clone(),
             text,
             self.voice.clone(),
             out_file_path
         );
         self.client.audio_speech(req)
             .await
-            .map(|res| res.result)
+            .map(|res| res.inner.result)
             .map_err(|e| e.to_string())
     }
 }
