@@ -25,7 +25,7 @@ impl TTS {
         );
         self.client.audio_speech(req)
             .await
-            .map(|res| res.result)
+            .map(|res| res.inner.result)
             .map_err(|e| e.to_string())
     }
 }

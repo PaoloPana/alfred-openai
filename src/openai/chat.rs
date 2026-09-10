@@ -4,7 +4,8 @@ use std::fmt::{Display, Formatter};
 use alfred_core::log::debug;
 use openai_api_rs::v1::api::{OpenAIClient, OpenAIClientBuilder};
 use openai_api_rs::v1::chat_completion;
-use openai_api_rs::v1::chat_completion::{ChatCompletionMessage, ChatCompletionRequest};
+use openai_api_rs::v1::chat_completion::{ChatCompletionMessage};
+use openai_api_rs::v1::chat_completion::chat_completion::ChatCompletionRequest;
 
 pub struct SystemMsg {
     intro: String,
@@ -78,7 +79,7 @@ impl Chat {
             messages
         );
         let result = self.client.chat_completion(req).await?;
-        let response_text = result.choices.first()
+        let response_text = result.inner.choices.first()
             .ok_or("choices array not found in OpenAI response")?
             .message.content.clone()
             .ok_or("No message received")?;

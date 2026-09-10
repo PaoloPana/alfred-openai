@@ -26,6 +26,7 @@ impl STT {
             self.client
                 .audio_transcription(request)
                 .await?
+                .inner
                 .text
         )
     }
