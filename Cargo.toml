@@ -9,9 +9,12 @@ alfred-core = "0.2"
 env_logger = "0.11"
 uuid = { version = "1.12", features = ["v4"] }
 openssl = { version = "0.10", features = ["vendored"] }
-futures-util = { version = "0.3", features = ["sink", "std"] }
-tokio-tungstenite = "0.28"
-serde_json = "1.0"
+oai-rt-rs = { version = "0.5", optional = true }
+base64 = { version = "0.23", optional = true }
+
+[features]
+# the Live module pulls its own websocket/TLS stack: keep it off the other binaries
+live = ["dep:oai-rt-rs", "dep:base64"]
 
 [[bin]]
 name = "alfred-openai-chat"
@@ -24,6 +27,11 @@ path = "src/stt.rs"
 [[bin]]
 name = "alfred-openai-tts"
 path = "src/tts.rs"
+
+[[bin]]
+name = "alfred-openai-live"
+path = "src/live.rs"
+required-features = ["live"]
 
 [lints.clippy]
 all = { level = "deny", priority = -1 }
