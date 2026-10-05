@@ -5,7 +5,7 @@ edition = "2021"
 
 [dependencies]
 openai-api-rs = "10.0"
-alfred-core = "0.2"
+alfred-core = "0.3"
 env_logger = "0.11"
 uuid = { version = "1.12", features = ["v4"] }
 openssl = { version = "0.10", features = ["vendored"] }

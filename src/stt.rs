@@ -54,13 +54,12 @@ async fn main() -> Result<(), Box<dyn Error>> {
                 MessageType::Audio => {
                     module.send_event(MODULE_NAME, STT_STARTED_EVENT, &Message::default()).await?;
                     let stt_manager = get_stt(&module)?;
-                    let response_text = stt_manager.convert(message.text.clone()).await.map_err(|e| e.to_string())?;
+                    let response_text = stt_manager.convert(message.text()?.to_string()).await.map_err(|e| e.to_string())?;
                     module.send_event(MODULE_NAME, STT_ENDED_EVENT, &Message::default()).await?;
                     (response_text, MessageType::Text)
                 }
-                MessageType::Unknown | MessageType::Text | MessageType::Photo | MessageType::ModuleInfo
-                | MessageType::StreamText | MessageType::StreamAudio | MessageType::StreamPhoto => {
-                    (message.text.clone(), message.message_type.clone())
+                _ => {
+                    (message.text()?.to_string(), message.message_type.clone())
                 }
             };
             let (response_topic, response) = message.reply(response_text, response_type).expect("Error on create response");

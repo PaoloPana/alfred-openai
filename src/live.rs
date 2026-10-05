@@ -97,7 +97,7 @@ async fn publish_events(connection: Connection, mut events: UnboundedReceiver<Li
                 (AUDIO_EVENT, audio_chunk(&pcm, &stream_id, audio_sequence - 1, sample_rate, false))
             }
             LiveEvent::Delegation(question) => {
-                (DELEGATION_EVENT, Message { text: question, message_type: MessageType::Text, ..Message::default() })
+                (DELEGATION_EVENT, Message { payload: question.into(), message_type: MessageType::Text, ..Message::default() })
             }
         };
         if let Err(err) = connection.send_event(MODULE_NAME, event_name, &message).await {
@@ -113,7 +113,7 @@ async fn publish_events(connection: Connection, mut events: UnboundedReceiver<Li
 
 fn text_chunk(text: String, stream_id: &str, sequence: u32) -> Message {
     Message {
-        text,
+        payload: text.into(),
         message_type: MessageType::StreamText,
         stream_id: stream_id.to_string(),
         sequence,
@@ -123,7 +123,7 @@ fn text_chunk(text: String, stream_id: &str, sequence: u32) -> Message {
 
 fn audio_chunk(pcm: &[u8], stream_id: &str, sequence: u32, sample_rate: u32, is_final: bool) -> Message {
     let mut message = Message {
-        text: BASE64.encode(pcm),
+        payload: BASE64.encode(pcm).into(),
         message_type: MessageType::StreamAudio,
         stream_id: stream_id.to_string(),
         sequence,
@@ -142,8 +142,8 @@ fn handle_message(module: &AlfredModule, session: &mut Option<UnboundedSender<Li
                 Some(live) if !live.is_closed() => live,
                 _ => start_session(module)?,
             };
-            if !message.text.is_empty() {
-                live.send(LiveCommand::Audio(BASE64.decode(&message.text)?))
+            if !message.payload.is_empty() {
+                live.send(LiveCommand::Audio(BASE64.decode(&message.payload)?))
                     .map_err(|_| "Live session is gone")?;
             }
             if message.is_final {
@@ -156,12 +156,12 @@ fn handle_message(module: &AlfredModule, session: &mut Option<UnboundedSender<Li
             let Some(live) = session.as_ref().filter(|live| !live.is_closed()) else {
                 return Err("No Live session is waiting for an answer".into());
             };
-            live.send(LiveCommand::Answer(message.text.clone()))
+            live.send(LiveCommand::Answer(message.text()?.to_string()))
                 .map_err(|_| "Live session is gone")?;
             Ok(())
         }
         MessageType::Unknown | MessageType::Audio | MessageType::Photo | MessageType::StreamText
-        | MessageType::StreamPhoto | MessageType::ModuleInfo => {
+        | MessageType::StreamPhoto | MessageType::ModuleInfo | _ => {
             Err(format!("Message of type {} cannot be elaborated by {MODULE_NAME}", message.message_type).into())
         }
     }

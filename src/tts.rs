@@ -57,7 +57,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
             module.send_event(MODULE_NAME, TTS_STARTED_EVENT, &Message::default()).await?;
             let tts_manager = get_tts(&module)?;
             let filename = format!("{}/{}.mp3", module.config.alfred.tmp_dir, Uuid::new_v4());
-            tts_manager.convert(message.text.clone(), filename.clone()).await?;
+            tts_manager.convert(message.text()?.to_string(), filename.clone()).await?;
             module.send_event(MODULE_NAME, TTS_ENDED_EVENT, &Message::default()).await?;
             let (response_topic, response) = message.reply(filename, MessageType::Audio).expect("Error on create response");
             module.send(&response_topic, &response).await.expect("Error on publish");
