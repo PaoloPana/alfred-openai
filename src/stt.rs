@@ -58,7 +58,8 @@ async fn main() -> Result<(), Box<dyn Error>> {
                     module.send_event(MODULE_NAME, STT_ENDED_EVENT, &Message::default()).await?;
                     (response_text, MessageType::Text)
                 }
-                _ => {
+                MessageType::Unknown | MessageType::Text | MessageType::Photo | MessageType::ModuleInfo
+                | MessageType::StreamText | MessageType::StreamAudio | MessageType::StreamPhoto | _ => {
                     (message.text()?.to_string(), message.message_type.clone())
                 }
             };
