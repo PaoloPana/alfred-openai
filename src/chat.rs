@@ -60,10 +60,10 @@ async fn chat_handler(module: &mut AlfredModule, chat_manager: &mut Chat) -> Res
                 Err(format!("Message of type {} cannot be elaborated by {} topic", message.message_type, MODULE_NAME))?;
             }
             module.send_event(MODULE_NAME, CHAT_STARTED_EVENT, &Message::default()).await?;
-            let response_text = chat_manager.generate_response(message.sender.clone(), message.text.clone()).await?;
+            let response_text = chat_manager.generate_response(message.sender.clone(), message.text()?.to_string()).await?;
             module.send_event(MODULE_NAME, CHAT_ENDED_EVENT, &Message::default()).await?;
             let (response_topic, mut response) = message.reply(response_text, MessageType::Text).expect("Error on create response");
-            response.params.insert("request".to_string(), message.text);
+            response.params.insert("request".to_string(), message.text()?.to_string());
             module.send(&response_topic, &response).await.expect("Error on publish");
             Ok(())
         },

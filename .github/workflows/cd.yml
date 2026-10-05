@@ -16,7 +16,7 @@ jobs:
       version: ${{ steps.retrieve-version.outputs.version }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
       - name: Check CHANGELOG.md file exists
         run: '[ -f CHANGELOG.md ]'
       - name: Check unreleased version is defined in CHANGELOG.md
@@ -30,7 +30,7 @@ jobs:
     needs: check-version
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
       - name: Build
         run: cargo build --all-targets
       - name: Test
@@ -41,7 +41,7 @@ jobs:
     needs: test-ubuntu
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
       - name: Install deps
         run: cargo install cross --git https://github.com/cross-rs/cross
       - name: Build
@@ -56,7 +56,7 @@ jobs:
     needs: test-ubuntu
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
       - name: Install deps
         run: cargo install cross --git https://github.com/cross-rs/cross
       - name: Build
@@ -75,7 +75,7 @@ jobs:
       - build-aarch64
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
       - name: Apply version and date in CHANGELOG.md file
         run: sed -i "s/^\#\# \[Unreleased\] - yyyy-mm-dd$/\#\# [${{needs.check-version.outputs.version}}] - $(date +'%Y-%m-%d')/g" CHANGELOG.md
       - name: Push changes and create tag
